@@ -1,0 +1,23 @@
+{
+  "name": "@art-of-coding/esi-browser",
+  "version": "0.0.1",
+  "description": "Small module to make unauthented request to Eve Online ESI",
+  "main": "./dist/index.js",
+  "author": "Michiel van der Velde <michiel@michielvdvelde.nl>",
+  "homepage": "https://github.com/Art-of-Coding/esi-browser",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Art-of-Coding/esi-browser.git"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "eve",
+    "esi"
+  ],
+  "license": "MIT",
+  "devDependencies": {},
+  "dependencies": {
+  }
+}
