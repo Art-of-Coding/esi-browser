@@ -45,7 +45,7 @@ export default async function fetchFromESI<T = any> (uri: string, endpoint = ESI
 
   info = {
     // @ts-ignore
-    ETag: response.headers['expires'],
+    ETag: response.headers['etag'],
     // @ts-ignore
     expires: new Date(response.headers['expires']).getTime(),
     data: await response.json()
