@@ -34,7 +34,8 @@ export default async function fetchFromESI<T = any> (uri: string, endpoint = ESI
   const response = await fetch(`${endpoint}${uri}`, { headers })
 
   if (info && response.status === 304) {
-    info.expires = new Date(response.headers.get('expires') ?? Date.now()).getTime()
+    // @ts-ignore
+    info.expires = new Date(response.headers['expires']).getTime()
 
     // Store the object again
     localStorage.setItem(key, JSON.stringify(info))
@@ -43,8 +44,10 @@ export default async function fetchFromESI<T = any> (uri: string, endpoint = ESI
   }
 
   info = {
-    ETag: response.headers.get('etag') ?? '<missing>',
-    expires: new Date(response.headers.get('expires') ?? Date.now()).getTime(),
+    // @ts-ignore
+    ETag: response.headers['expires'],
+    // @ts-ignore
+    expires: new Date(response.headers['expires']).getTime(),
     data: await response.json()
   }
 
