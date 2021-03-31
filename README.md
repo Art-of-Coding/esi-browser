@@ -17,8 +17,16 @@ npm i @art-of-coding/esi-browser
 To request information about a type:
 
 ```ts
+import fetchFromEsi from '@art-of-coding/esi-browser'
+
 const typeId = 36
-const data = await fetchFromESI(`/universe/types/${typeId}`)
+const data = await fetchFromESI(`/universe/types/${typeId}/`)
 
 console.log(`This item is called ${data.name}`)
 ```
+
+## License
+
+Copyright 2021 Michiel van der Velde.
+
+This software is licensed under [the MIT License](LICENSE).

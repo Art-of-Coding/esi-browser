@@ -1,57 +1,85 @@
-/** URL to Eve Online ESI */
-export const ESI_URL = 'https://esi.evetech.net/latest'
+import StatusError from './util/StatusError'
 
-export interface ESIObject<T = any> {
+interface EsiObject<T> {
+  status: number,
   ETag: string,
-  expires: number,
+  expiresOn: Date,
   data: T
 }
 
-export default async function fetchFromESI<T = any> (uri: string, endpoint = ESI_URL) {
-  const key = `/esi${uri}`
-  const strValue = localStorage.getItem(key)
+export default async function fetchEsi<T> (uri: string, body?: Record<string, any> | any[], opts?: {
+  statusCodes?: number[],
+  headers?: Record<string, string>,
+  noCheck?: boolean
+}) {
+  const noCheck = opts?.noCheck ?? false
+  const statusCodes = opts?.statusCodes ?? [ 200 ]
+  const headers = opts?.headers ?? {}
 
-  let info: ESIObject<T> = null
-
-  if (strValue) {
-    try {
-      info = JSON.parse(strValue)
-    } catch (e) {}
+  if (!uri.startsWith('/')) {
+    uri = `/${uri}`
   }
 
-  //
-  const headers: Record<string, string> = {}
+  if (!uri.endsWith('/')) {
+    uri = `${uri}/`
+  }
 
-  if (info) {
-    if (info.expires > Date.now()) {
-      // Not expired - return data
-      return info.data
+  const strValue = localStorage.getItem(uri)
+
+  let requestInfo: EsiObject<T> | null = null
+  if (!noCheck && strValue) {
+    try { requestInfo = JSON.parse(strValue) }
+    catch (e) { throw new Error('Unable to parse stored info') }
+
+    if (requestInfo && new Date(requestInfo.expiresOn).getTime() > Date.now()) {
+      return requestInfo.data
     }
 
-    headers['If-None-Match'] = info.ETag
+    if (requestInfo?.ETag) {
+      headers['If-None-Match'] = requestInfo.ETag
+    }
+
+    if (!statusCodes.includes(304)) {
+      statusCodes.push(304)
+    }
   }
 
-  const response = await fetch(`${endpoint}${uri}`, { headers })
+  let encodedBody: string | null = null
 
-  if (info && response.status === 304) {
-    // @ts-ignore
-    info.expires = new Date(response.headers['expires']).getTime()
-
-    // Store the object again
-    localStorage.setItem(key, JSON.stringify(info))
-
-    return info.data
+  if (body) {
+    try {
+      encodedBody = JSON.stringify(body)
+      headers['Content-Type'] = 'application/json'
+    } catch (e) {
+      throw new TypeError('Failed to serialize body')
+    }
   }
 
-  info = {
-    // @ts-ignore
-    ETag: response.headers['etag'],
-    // @ts-ignore
-    expires: new Date(response.headers['expires']).getTime(),
-    data: await response.json()
+  const response = await fetch(`https://esi.evetech.net/latest${uri}`, {
+    method: 'GET',
+    headers,
+    body: encodedBody ?? undefined
+  })
+
+  if (!statusCodes.includes(response.status)) {
+    const data = await response.json()
+    throw new StatusError(response.status, data.error ?? 'No message')
   }
 
-  // Store the object
-  localStorage.setItem(key, JSON.stringify(info))
-  return info.data
+  if (requestInfo && response.status === 304) {
+    return requestInfo.data
+  }
+
+  const data = await response.json()
+
+  if (!noCheck && response.status >= 200 && response.status <= 299) {
+    localStorage.setItem(uri, JSON.stringify({
+      status: response.status,
+      ETag: response.headers.get('etag'),
+      expiresOn: response.headers.get('expires'),
+      data
+    }))
+  }
+
+  return data
 }

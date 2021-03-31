@@ -1,6 +1,6 @@
 {
   "name": "@art-of-coding/esi-browser",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "Small module to make unauthented request to Eve Online ESI",
   "main": "./dist/index.js",
   "author": "Michiel van der Velde <michiel@michielvdvelde.nl>",
