@@ -7,12 +7,12 @@ interface EsiObject<T> {
   data: T
 }
 
-export default async function fetchEsi<T> (uri: string, body?: Record<string, any> | any[], opts?: {
+export default async function fetchEsi<T> (uri: string, opts?: {
   statusCodes?: number[],
   headers?: Record<string, string>,
-  noCheck?: boolean
+  check?: boolean
 }) {
-  const noCheck = opts?.noCheck ?? false
+  const check = typeof opts?.check === 'boolean' ? opts.check : true
   const statusCodes = opts?.statusCodes ?? [ 200 ]
   const headers = opts?.headers ?? {}
 
@@ -27,7 +27,7 @@ export default async function fetchEsi<T> (uri: string, body?: Record<string, an
   const strValue = localStorage.getItem(uri)
 
   let requestInfo: EsiObject<T> | null = null
-  if (!noCheck && strValue) {
+  if (check && strValue) {
     try { requestInfo = JSON.parse(strValue) }
     catch (e) { throw new Error('Unable to parse stored info') }
 
@@ -44,21 +44,9 @@ export default async function fetchEsi<T> (uri: string, body?: Record<string, an
     }
   }
 
-  let encodedBody: string | null = null
-
-  if (body) {
-    try {
-      encodedBody = JSON.stringify(body)
-      headers['Content-Type'] = 'application/json'
-    } catch (e) {
-      throw new TypeError('Failed to serialize body')
-    }
-  }
-
   const response = await fetch(`https://esi.evetech.net/latest${uri}`, {
     method: 'GET',
-    headers,
-    body: encodedBody ?? undefined
+    headers
   })
 
   if (!statusCodes.includes(response.status)) {
@@ -72,7 +60,7 @@ export default async function fetchEsi<T> (uri: string, body?: Record<string, an
 
   const data = await response.json()
 
-  if (!noCheck && response.status >= 200 && response.status <= 299) {
+  if (check && response.status >= 200 && response.status <= 299) {
     localStorage.setItem(uri, JSON.stringify({
       status: response.status,
       ETag: response.headers.get('etag'),
